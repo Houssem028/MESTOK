@@ -8,6 +8,7 @@ import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -65,8 +68,7 @@ class MainActivity : ComponentActivity() {
             )) {
                 when (page) {
                     "welcome" -> WelcomeScreen(
-                        onLogin = { page = "login" },
-                        onSignup = { page = "signup" }
+                        onLogin = { page = "login" }
                     )
                     "login" -> AuthScreen(
                         title = "تسجيل الدخول",
@@ -75,15 +77,6 @@ class MainActivity : ComponentActivity() {
                         onBack = { page = "welcome" },
                         onSwitch = { page = "signup" },
                         onSubmit = { notice = "واجهة الدخول جاهزة، وسيتم ربط الحسابات الآمنة في المرحلة التالية." }
-                    )
-                    "signup" -> AuthScreen(
-                        title = "إنشاء حساب",
-                        subtitle = "أنشئ حساب MESTOK جديداً",
-                        button = "إنشاء الحساب",
-                        onBack = { page = "welcome" },
-                        onSwitch = { page = "login" },
-                        onSubmit = { notice = "واجهة التسجيل جاهزة، وسيتم تفعيل إنشاء الحساب بعد ربط نظام الحسابات." },
-                        isSignup = true
                     )
                     "settings" -> SettingsScreen(
                         notificationEnabled = isNotificationAccessEnabled(),
@@ -146,28 +139,25 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun WelcomeScreen(onLogin: () -> Unit, onSignup: () -> Unit) {
-    Box(Modifier.fillMaxSize().background(Ink).padding(26.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Box(Modifier.size(104.dp).clip(RoundedCornerShape(30.dp))
-                .background(Brush.linearGradient(listOf(Cyan, Purple, Color(0xFFE879F9)))),
-                contentAlignment = Alignment.Center) {
-                Text("M", fontSize = 66.sp, fontWeight = FontWeight.Black, color = Color.White)
+private fun WelcomeScreen(onLogin: () -> Unit) {
+    Box(Modifier.fillMaxSize().background(Color.Black).padding(horizontal = 18.dp, vertical = 24.dp),
+        contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Image(
+                painter = painterResource(id = R.drawable.mestok_logo),
+                contentDescription = "MESTOK logo",
+                modifier = Modifier.fillMaxWidth().aspectRatio(1f).heightIn(max = 390.dp),
+                contentScale = ContentScale.Fit
+            )
+            Text("MESTOK", fontSize = 32.sp, fontWeight = FontWeight.Black,
+                letterSpacing = 4.sp, color = Color.White)
+            Spacer(Modifier.height(12.dp))
+            Button(onClick = onLogin, modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp)) {
+                Text("المتابعة باستخدام TikTok", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
-            Text("MESTOK", fontSize = 34.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
-            Text("Stay in the moment.", color = Muted, fontSize = 14.sp)
-            Spacer(Modifier.height(18.dp))
-            Text("رسائلك معك… وأنت تتابع", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            Text("تابع إشعاراتك وابقَ قريباً من محادثاتك دون مغادرة الفيديو.",
-                color = Muted, fontSize = 14.sp, lineHeight = 22.sp)
-            Spacer(Modifier.height(20.dp))
-            Button(onClick = onLogin, modifier = Modifier.fillMaxWidth().height(54.dp),
-                shape = RoundedCornerShape(16.dp)) { Text("تسجيل الدخول", fontSize = 16.sp) }
-            OutlinedButton(onClick = onSignup, modifier = Modifier.fillMaxWidth().height(54.dp),
-                shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = Cyan)) {
-                Text("إنشاء حساب جديد", fontSize = 16.sp)
-            }
-            Text("نسخة تجريبية • MESTOK", color = Muted, fontSize = 11.sp)
+            Text("سجّل الدخول بحساب TikTok الخاص بك", color = Muted, fontSize = 12.sp)
         }
     }
 }
@@ -178,29 +168,26 @@ private fun AuthScreen(
     onBack: () -> Unit, onSwitch: () -> Unit, onSubmit: () -> Unit,
     isSignup: Boolean = false
 ) {
-    var username by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    Column(Modifier.fillMaxSize().background(Ink).padding(24.dp)) {
-        IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "رجوع", tint = Color.White) }
-        Spacer(Modifier.height(36.dp))
-        Text(title, fontSize = 30.sp, fontWeight = FontWeight.Bold)
-        Text(subtitle, color = Muted, modifier = Modifier.padding(top = 8.dp, bottom = 28.dp))
-        if (isSignup) AuthField("اسم المستخدم", username, { username = it })
-        AuthField("البريد الإلكتروني", email, { email = it }, keyboard = KeyboardType.Email)
-        AuthField("كلمة المرور", password, { password = it }, secret = true)
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = onSubmit, modifier = Modifier.fillMaxWidth().height(54.dp),
-            shape = RoundedCornerShape(16.dp)) { Text(button) }
-        TextButton(onClick = onSwitch, modifier = Modifier.fillMaxWidth()) {
-            Text(if (isSignup) "لديك حساب؟ تسجيل الدخول" else "ليس لديك حساب؟ إنشاء حساب")
+    Column(Modifier.fillMaxSize().background(Ink).padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "رجوع", tint = Color.White) }
+            Text(title, fontSize = 26.sp, fontWeight = FontWeight.Bold)
         }
         Spacer(Modifier.weight(1f))
-        Text("تنبيه: هذه واجهة أولية؛ الحسابات وتسجيل الدخول الفعلي لم يتم ربطهما بعد.",
-            color = Muted, fontSize = 12.sp, lineHeight = 18.sp)
+        Text("MESTOK", fontSize = 34.sp, fontWeight = FontWeight.Black,
+            letterSpacing = 3.sp, color = Color.White)
+        Text(subtitle, color = Muted, modifier = Modifier.padding(top = 10.dp, bottom = 28.dp))
+        Button(onClick = onSubmit, modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(16.dp)) {
+            Text("المتابعة باستخدام TikTok", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+        Text("سيتم فتح تسجيل الدخول الرسمي من TikTok بعد إعداد Login Kit ومفاتيح المطوّر.",
+            color = Muted, fontSize = 12.sp, lineHeight = 18.sp,
+            modifier = Modifier.padding(top = 14.dp))
+        Spacer(Modifier.weight(1f))
     }
 }
-
 @Composable
 private fun AuthField(label: String, value: String, onValue: (String) -> Unit,
                       keyboard: KeyboardType = KeyboardType.Text, secret: Boolean = false) {
