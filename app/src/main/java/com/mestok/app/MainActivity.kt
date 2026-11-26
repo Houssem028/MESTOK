@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -93,11 +94,22 @@ class MainActivity : ComponentActivity() {
                                 Uri.parse("package:$packageName")))
                         },
                         onPrivacy = { page = "privacy" },
+                        onTerms = { page = "terms" },
+                        onSupport = { page = "support" },
                         onAbout = { page = "about" }
                     )
                     "privacy" -> InfoScreen("الخصوصية",
                         "إشعارات TikTok التي يلتقطها MESTOK تُحفظ محلياً على هاتفك. لا نرفع محتوى الإشعارات إلى خادم في هذه النسخة. لا يمكن للتطبيق قراءة الرسائل التي لا تظهر في إشعارات النظام.",
-                        { page = "settings" })
+                        { page = "settings" },
+                        "https://houssem028.github.io/privacy.html", "قراءة سياسة الخصوصية الكاملة")
+                    "terms" -> InfoScreen("شروط الاستخدام",
+                        "MESTOK تطبيق تجريبي مستقل. استخدامه يخضع لشروط الاستخدام المنشورة على موقعنا.",
+                        { page = "settings" },
+                        "https://houssem028.github.io/terms.html", "قراءة شروط الاستخدام")
+                    "support" -> InfoScreen("الدعم والمساعدة",
+                        "للمساعدة والإبلاغ عن مشكلة، يمكنك زيارة صفحة الدعم الرسمية.",
+                        { page = "settings" },
+                        "https://houssem028.github.io/support.html", "فتح صفحة الدعم")
                     "about" -> InfoScreen("حول MESTOK",
                         "MESTOK تطبيق مرافق لمستخدمي TikTok، يهدف إلى تسهيل متابعة الإشعارات أثناء مشاهدة الفيديوهات والبث المباشر. هذه نسخة تجريبية قيد التطوير.",
                         { page = "settings" })
@@ -166,6 +178,7 @@ private fun WelcomeScreen(onContinue: () -> Unit) {
 
 @Composable
 private fun LoginScreen(onTikTok: () -> Unit) {
+    val uriHandler = LocalUriHandler.current
     var showPhoneLogin by remember { mutableStateOf(false) }
     var identifier by remember { mutableStateOf("") }
     var infoTitle by remember { mutableStateOf<String?>(null) }
@@ -230,13 +243,11 @@ private fun LoginScreen(onTikTok: () -> Unit) {
             horizontalArrangement = Arrangement.Center
         ) {
             TextButton(onClick = {
-                infoTitle = "Conditions d'utilisation"
-                infoBody = "Les conditions d'utilisation de MESTOK seront publiées avant l'ouverture du service."
+                uriHandler.openUri("https://houssem028.github.io/terms.html")
             }) { Text("Conditions d'utilisation", color = Color(0xFF315D91), fontSize = 11.sp) }
             Text("•", color = Color(0xFF999999), modifier = Modifier.padding(top = 12.dp))
             TextButton(onClick = {
-                infoTitle = "Politique de confidentialité"
-                infoBody = "Dans cette version, les aperçus de notifications TikTok sont conservés localement sur ton téléphone. MESTOK ne les envoie pas à un serveur. La politique complète détaillera les données utilisées par chaque fonctionnalité avant son activation."
+                uriHandler.openUri("https://houssem028.github.io/privacy.html")
             }) { Text("Confidentialité", color = Color(0xFF315D91), fontSize = 11.sp) }
         }
     }
@@ -373,7 +384,7 @@ private fun SettingsScreen(
     notificationEnabled: Boolean, overlayEnabled: Boolean,
     onBack: () -> Unit, onNotificationAccess: () -> Unit,
     onAppInfo: () -> Unit, onOverlay: () -> Unit,
-    onPrivacy: () -> Unit, onAbout: () -> Unit
+    onPrivacy: () -> Unit, onTerms: () -> Unit, onSupport: () -> Unit, onAbout: () -> Unit
 ) {
     LazyColumn(Modifier.fillMaxSize().background(Ink).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -404,7 +415,9 @@ private fun SettingsScreen(
             }
         }
         item { Text("عام", color = Cyan, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp)) }
-        item { SettingItem("الخصوصية", "كيف نتعامل مع بياناتك", "›", onPrivacy) }
+        item { SettingItem("الخصوصية", "سياسة الخصوصية الكاملة", "›", onPrivacy) }
+        item { SettingItem("شروط الاستخدام", "شروط استخدام MESTOK", "›", onTerms) }
+        item { SettingItem("الدعم والمساعدة", "التواصل والإبلاغ عن مشكلة", "›", onSupport) }
         item { SettingItem("حول التطبيق", "الإصدار التجريبي من MESTOK", "›", onAbout) }
     }
 }
@@ -424,10 +437,16 @@ private fun SettingItem(title: String, subtitle: String, trailing: String, onCli
 }
 
 @Composable
-private fun InfoScreen(title: String, body: String, onBack: () -> Unit) {
+private fun InfoScreen(title: String, body: String, onBack: () -> Unit,
+                       externalUrl: String? = null, linkLabel: String? = null) {
+    val uriHandler = LocalUriHandler.current
     Column(Modifier.fillMaxSize().background(Ink).padding(22.dp)) {
         IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "رجوع", tint = Color.White) }
         Text(title, fontSize = 28.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 24.dp))
         Text(body, color = Muted, fontSize = 15.sp, lineHeight = 24.sp, modifier = Modifier.padding(top = 16.dp))
+        if (externalUrl != null && linkLabel != null) {
+            Button(onClick = { uriHandler.openUri(externalUrl) },
+                modifier = Modifier.fillMaxWidth().padding(top = 22.dp)) { Text(linkLabel) }
+        }
     }
 }
