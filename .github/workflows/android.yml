@@ -64,3 +64,5 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 # Trigger CI to verify stable signing secrets.
+
+# Re-run CI with whitespace-safe signing secret decoding.
