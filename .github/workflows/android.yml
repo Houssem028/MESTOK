@@ -20,6 +20,29 @@ jobs:
           gradle-version: "8.9"
       - name: Build debug APK
         run: gradle assembleDebug
+      - name: Apply stable MESTOK signing key when configured
+        shell: bash
+        env:
+          MESTOK_KEYSTORE_BASE64: ${{ secrets.MESTOK_KEYSTORE_BASE64 }}
+          MESTOK_STORE_PASSWORD: ${{ secrets.MESTOK_STORE_PASSWORD }}
+          MESTOK_KEY_ALIAS: ${{ secrets.MESTOK_KEY_ALIAS }}
+          MESTOK_KEY_PASSWORD: ${{ secrets.MESTOK_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          if [ -n "$MESTOK_KEYSTORE_BASE64" ] && [ -n "$MESTOK_STORE_PASSWORD" ] && [ -n "$MESTOK_KEY_ALIAS" ] && [ -n "$MESTOK_KEY_PASSWORD" ]; then
+            SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+            APKSIGNER="$(find "$SDK_ROOT/build-tools" -type f -name apksigner | sort | tail -n 1)"
+            KEYSTORE="$RUNNER_TEMP/mestok-upload-key.jks"
+            SIGNED_APK="$RUNNER_TEMP/mestok-signed.apk"
+            trap 'rm -f "$KEYSTORE" "$SIGNED_APK"' EXIT
+            printf '%s' "$MESTOK_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+            "$APKSIGNER" sign --ks "$KEYSTORE" --ks-key-alias "$MESTOK_KEY_ALIAS" --ks-pass env:MESTOK_STORE_PASSWORD --key-pass env:MESTOK_KEY_PASSWORD --out "$SIGNED_APK" "$APK"
+            mv "$SIGNED_APK" "$APK"
+            echo "Stable MESTOK signing key applied."
+          else
+            echo "::warning::Stable signing secrets are not configured. This APK uses the temporary debug key; its fingerprint may change on the next runner."
+          fi
       - name: Show APK signing certificate SHA-256
         shell: bash
         run: |
