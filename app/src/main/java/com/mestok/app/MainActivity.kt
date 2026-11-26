@@ -166,26 +166,141 @@ private fun WelcomeScreen(onContinue: () -> Unit) {
 
 @Composable
 private fun LoginScreen(onTikTok: () -> Unit) {
-    Column(Modifier.fillMaxSize().background(Color.Black).padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center) {
-        Text("MESTOK", fontSize = 34.sp, fontWeight = FontWeight.Black,
-            letterSpacing = 4.sp, color = Color.White)
-        Text(localized("تسجيل الدخول", "Connexion", "Log in"),
-            fontSize = 25.sp, fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 24.dp, bottom = 10.dp))
-        Text(localized("تابع باستخدام حساب TikTok الخاص بك",
-            "Continuez avec votre compte TikTok",
-            "Continue with your TikTok account"), color = Muted, fontSize = 14.sp)
-        Button(onClick = onTikTok,
-            modifier = Modifier.fillMaxWidth().padding(top = 28.dp).height(56.dp),
-            shape = RoundedCornerShape(16.dp)) {
-            Text(localized("المتابعة باستخدام TikTok",
-                "Continuer avec TikTok", "Continue with TikTok"),
-                fontSize = 16.sp, fontWeight = FontWeight.Bold)
+    var showPhoneLogin by remember { mutableStateOf(false) }
+    var identifier by remember { mutableStateOf("") }
+    var infoTitle by remember { mutableStateOf<String?>(null) }
+    var infoBody by remember { mutableStateOf("") }
+
+    Column(
+        Modifier.fillMaxSize().background(Color.White).padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(Modifier.height(42.dp))
+        Text("MESTOK", color = Color(0xFF111111), fontSize = 25.sp,
+            fontWeight = FontWeight.Black, letterSpacing = 3.sp)
+        Spacer(Modifier.height(34.dp))
+        Text("Connecte-toi à MESTOK", color = Color(0xFF111111),
+            fontSize = 28.sp, fontWeight = FontWeight.ExtraBold,
+            lineHeight = 34.sp)
+        Text("Choisis ta méthode de connexion", color = Color(0xFF777777),
+            fontSize = 14.sp, modifier = Modifier.padding(top = 10.dp, bottom = 28.dp))
+
+        LoginChoice("☎", "Téléphone / E-mail / Nom d'utilisateur") {
+            showPhoneLogin = true
+        }
+        Spacer(Modifier.height(12.dp))
+        LoginChoice("♪", "Continuer avec TikTok") { onTikTok() }
+        Spacer(Modifier.height(12.dp))
+        LoginChoice("f", "Continuer avec Facebook") {
+            infoTitle = "Facebook"
+            infoBody = "La connexion Facebook sera activée après la configuration officielle de Facebook Login."
+        }
+        Spacer(Modifier.height(12.dp))
+        LoginChoice("G", "Continuer avec Google") {
+            infoTitle = "Google"
+            infoBody = "La connexion Google sera activée après la configuration officielle de Google Sign-In."
+        }
+        Spacer(Modifier.height(24.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            HorizontalDivider(Modifier.weight(1f), color = Color(0xFFE2E2E2))
+            Text("  OU  ", color = Color(0xFF888888), fontSize = 12.sp)
+            HorizontalDivider(Modifier.weight(1f), color = Color(0xFFE2E2E2))
+        }
+        Spacer(Modifier.height(18.dp))
+        LoginChoice("▶", "Ouvrir l'application TikTok") {
+            infoTitle = "TikTok"
+            infoBody = "Tu peux ouvrir TikTok depuis ton téléphone. Pour connecter automatiquement ton compte à MESTOK, l'autorisation officielle TikTok Login Kit doit être configurée."
+        }
+
+        Spacer(Modifier.weight(1f))
+        TextButton(onClick = {
+            infoTitle = "Créer un compte"
+            infoBody = "La création de compte MESTOK sera disponible lorsque le système sécurisé d'inscription sera connecté."
+        }) {
+            Text("Tu n'as pas de compte ?  Inscription",
+                color = Color(0xFFFE2C55), fontWeight = FontWeight.SemiBold)
+        }
+        Text(
+            "En continuant, tu acceptes nos Conditions d'utilisation et notre Politique de confidentialité.",
+            color = Color(0xFF888888), fontSize = 11.sp, lineHeight = 17.sp,
+            modifier = Modifier.padding(top = 8.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Row(
+            Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 22.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            TextButton(onClick = {
+                infoTitle = "Conditions d'utilisation"
+                infoBody = "Les conditions d'utilisation de MESTOK seront publiées avant l'ouverture du service."
+            }) { Text("Conditions d'utilisation", color = Color(0xFF315D91), fontSize = 11.sp) }
+            Text("•", color = Color(0xFF999999), modifier = Modifier.padding(top = 12.dp))
+            TextButton(onClick = {
+                infoTitle = "Politique de confidentialité"
+                infoBody = "Dans cette version, les aperçus de notifications TikTok sont conservés localement sur ton téléphone. MESTOK ne les envoie pas à un serveur. La politique complète détaillera les données utilisées par chaque fonctionnalité avant son activation."
+            }) { Text("Confidentialité", color = Color(0xFF315D91), fontSize = 11.sp) }
+        }
+    }
+
+    if (showPhoneLogin) {
+        AlertDialog(
+            onDismissRequest = { showPhoneLogin = false },
+            title = { Text("Connexion MESTOK", color = Color(0xFF111111)) },
+            text = {
+                Column {
+                    Text("Téléphone, e-mail ou nom d'utilisateur",
+                        color = Color(0xFF555555), fontSize = 13.sp)
+                    OutlinedTextField(
+                        value = identifier, onValueChange = { identifier = it },
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                        singleLine = true, placeholder = { Text("Saisis tes identifiants") }
+                    )
+                    Text("La connexion sécurisée sera activée après la configuration du service d'authentification.",
+                        color = Color(0xFF777777), fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 10.dp))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showPhoneLogin = false }) { Text("Fermer") }
+            },
+            containerColor = Color.White
+        )
+    }
+
+    infoTitle?.let { title ->
+        AlertDialog(
+            onDismissRequest = { infoTitle = null },
+            title = { Text(title, color = Color(0xFF111111)) },
+            text = { Text(infoBody, color = Color(0xFF555555)) },
+            confirmButton = {
+                TextButton(onClick = { infoTitle = null }) { Text("OK") }
+            },
+            containerColor = Color.White
+        )
+    }
+}
+
+@Composable
+private fun LoginChoice(symbol: String, label: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 62.dp),
+        shape = RoundedCornerShape(15.dp),
+        color = Color(0xFFF1F1F1)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(symbol, color = if (symbol == "f") Color(0xFF1877F2)
+                else if (symbol == "G") Color(0xFF4285F4) else Color(0xFF111111),
+                fontSize = 22.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.width(34.dp))
+            Text(label, color = Color(0xFF111111), fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold)
         }
     }
 }
+
 @Composable
 private fun AuthField(label: String, value: String, onValue: (String) -> Unit,
                       keyboard: KeyboardType = KeyboardType.Text, secret: Boolean = false) {
