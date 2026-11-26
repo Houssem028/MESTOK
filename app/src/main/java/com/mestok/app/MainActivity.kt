@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings as SettingsIcon
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
+import java.util.Locale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,16 +69,13 @@ class MainActivity : ComponentActivity() {
                 secondary = Cyan, onBackground = Color.White, onSurface = Color.White
             )) {
                 when (page) {
-                    "welcome" -> WelcomeScreen(
-                        onLogin = { page = "login" }
-                    )
-                    "login" -> AuthScreen(
-                        title = "تسجيل الدخول",
-                        subtitle = "مرحباً بعودتك إلى MESTOK",
-                        button = "دخول",
-                        onBack = { page = "welcome" },
-                        onSwitch = { page = "signup" },
-                        onSubmit = { notice = "واجهة الدخول جاهزة، وسيتم ربط الحسابات الآمنة في المرحلة التالية." }
+                    "welcome" -> WelcomeScreen(onContinue = { page = "login" })
+                    "login" -> LoginScreen(
+                        onTikTok = { notice = localized(
+                            "سيتم تفعيل تسجيل TikTok الرسمي بعد ربط Login Kit ومفاتيح المطوّر.",
+                            "La connexion TikTok officielle sera activée après la configuration de Login Kit.",
+                            "Official TikTok sign-in will be enabled after Login Kit and developer keys are configured."
+                        ) }
                     )
                     "settings" -> SettingsScreen(
                         notificationEnabled = isNotificationAccessEnabled(),
@@ -139,53 +138,53 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun WelcomeScreen(onLogin: () -> Unit) {
-    Box(Modifier.fillMaxSize().background(Color.Black).padding(horizontal = 18.dp, vertical = 24.dp),
+private fun localized(ar: String, fr: String, en: String): String =
+    when (Locale.getDefault().language.lowercase(Locale.ROOT)) {
+        "fr" -> fr
+        "en" -> en
+        else -> ar
+    }
+
+@Composable
+private fun WelcomeScreen(onContinue: () -> Unit) {
+    LaunchedEffect(Unit) {
+        delay(1400)
+        onContinue()
+    }
+    Box(Modifier.fillMaxSize().background(Color.Black).padding(18.dp),
         contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Image(
-                painter = painterResource(id = R.drawable.mestok_logo),
-                contentDescription = "MESTOK logo",
-                modifier = Modifier.fillMaxWidth().aspectRatio(1f).heightIn(max = 390.dp),
-                contentScale = ContentScale.Fit
-            )
-            Text("MESTOK", fontSize = 32.sp, fontWeight = FontWeight.Black,
+            verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Image(painter = painterResource(id = R.drawable.mestok_logo),
+                contentDescription = "MESTOK",
+                modifier = Modifier.fillMaxWidth().aspectRatio(1f).heightIn(max = 430.dp),
+                contentScale = ContentScale.Fit)
+            Text("MESTOK", fontSize = 34.sp, fontWeight = FontWeight.Black,
                 letterSpacing = 4.sp, color = Color.White)
-            Spacer(Modifier.height(12.dp))
-            Button(onClick = onLogin, modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(16.dp)) {
-                Text("المتابعة باستخدام TikTok", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            }
-            Text("سجّل الدخول بحساب TikTok الخاص بك", color = Muted, fontSize = 12.sp)
         }
     }
 }
 
 @Composable
-private fun AuthScreen(
-    title: String, subtitle: String, button: String,
-    onBack: () -> Unit, onSwitch: () -> Unit, onSubmit: () -> Unit,
-    isSignup: Boolean = false
-) {
-    Column(Modifier.fillMaxSize().background(Ink).padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "رجوع", tint = Color.White) }
-            Text(title, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-        }
-        Spacer(Modifier.weight(1f))
+private fun LoginScreen(onTikTok: () -> Unit) {
+    Column(Modifier.fillMaxSize().background(Color.Black).padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center) {
         Text("MESTOK", fontSize = 34.sp, fontWeight = FontWeight.Black,
-            letterSpacing = 3.sp, color = Color.White)
-        Text(subtitle, color = Muted, modifier = Modifier.padding(top = 10.dp, bottom = 28.dp))
-        Button(onClick = onSubmit, modifier = Modifier.fillMaxWidth().height(56.dp),
+            letterSpacing = 4.sp, color = Color.White)
+        Text(localized("تسجيل الدخول", "Connexion", "Log in"),
+            fontSize = 25.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 24.dp, bottom = 10.dp))
+        Text(localized("تابع باستخدام حساب TikTok الخاص بك",
+            "Continuez avec votre compte TikTok",
+            "Continue with your TikTok account"), color = Muted, fontSize = 14.sp)
+        Button(onClick = onTikTok,
+            modifier = Modifier.fillMaxWidth().padding(top = 28.dp).height(56.dp),
             shape = RoundedCornerShape(16.dp)) {
-            Text("المتابعة باستخدام TikTok", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(localized("المتابعة باستخدام TikTok",
+                "Continuer avec TikTok", "Continue with TikTok"),
+                fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
-        Text("سيتم فتح تسجيل الدخول الرسمي من TikTok بعد إعداد Login Kit ومفاتيح المطوّر.",
-            color = Muted, fontSize = 12.sp, lineHeight = 18.sp,
-            modifier = Modifier.padding(top = 14.dp))
-        Spacer(Modifier.weight(1f))
     }
 }
 @Composable
