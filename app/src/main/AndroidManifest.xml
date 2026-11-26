@@ -3,8 +3,8 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <application
         android:allowBackup="false"
-        android:icon="@mipmap/mestok_logo"
-        android:roundIcon="@mipmap/mestok_logo"
+        android:icon="@drawable/mestok_logo"
+        android:roundIcon="@drawable/mestok_logo"
         android:label="MESTOK"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
