@@ -137,7 +137,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
 private fun localized(ar: String, fr: String, en: String): String =
     when (Locale.getDefault().language.lowercase(Locale.ROOT)) {
         "fr" -> fr
