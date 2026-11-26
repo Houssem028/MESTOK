@@ -32,14 +32,34 @@ private val Cyan = Color(0xFF42D9F5)
 private val Muted = Color(0xFF9CA3B8)
 
 class MainActivity : ComponentActivity() {
+    private var refreshTick by mutableIntStateOf(0)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        render()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshTick++
+    }
+
+    private fun render() {
         setContent {
+            val tick = refreshTick
+            val prefs = getSharedPreferences("mestok_local", MODE_PRIVATE)
+            val latestTitle = prefs.getString("last_title", null).orEmpty()
+            val latestMessage = prefs.getString("last_message", null).orEmpty()
+            val hasLatest = latestTitle.isNotBlank() || latestMessage.isNotBlank()
+
             MaterialTheme(colorScheme = darkColorScheme(
                 background = Ink, surface = Panel, primary = Purple,
                 secondary = Cyan, onBackground = Color.White, onSurface = Color.White
             )) {
                 MestokHome(
+                    latestTitle = latestTitle,
+                    latestMessage = latestMessage,
+                    hasLatest = hasLatest,
                     overlayEnabled = Settings.canDrawOverlays(this),
                     notificationEnabled = isNotificationAccessEnabled(),
                     onOverlayClick = {
@@ -47,6 +67,11 @@ class MainActivity : ComponentActivity() {
                     },
                     onNotificationClick = {
                         startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    },
+                    onOpenTikTok = {
+                        val tiktok = packageManager.getLaunchIntentForPackage("com.zhiliaoapp.musically")
+                            ?: packageManager.getLaunchIntentForPackage("com.ss.android.ugc.trill")
+                        tiktok?.let { startActivity(it) }
                     }
                 )
             }
@@ -62,10 +87,14 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun MestokHome(
+    latestTitle: String,
+    latestMessage: String,
+    hasLatest: Boolean,
     overlayEnabled: Boolean,
     notificationEnabled: Boolean,
     onOverlayClick: () -> Unit,
-    onNotificationClick: () -> Unit
+    onNotificationClick: () -> Unit,
+    onOpenTikTok: () -> Unit
 ) {
     Surface(Modifier.fillMaxSize(), color = Ink) {
         LazyColumn(
@@ -116,6 +145,26 @@ private fun MestokHome(
                 }
             }
             item {
+                Text("آخر إشعار من TikTok", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Card(colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(18.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                        if (hasLatest) {
+                            Text(latestTitle.ifBlank { "TikTok" }, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            Spacer(Modifier.height(5.dp))
+                            Text(latestMessage.ifBlank { "لا يوجد نص في هذا الإشعار." }, color = Muted, fontSize = 13.sp)
+                            Spacer(Modifier.height(12.dp))
+                            Button(onClick = onOpenTikTok, colors = ButtonDefaults.buttonColors(containerColor = Purple)) {
+                                Text("فتح TikTok")
+                            }
+                        } else {
+                            Text("ما وصلنا حتى إشعار بعد", fontWeight = FontWeight.SemiBold)
+                            Spacer(Modifier.height(5.dp))
+                            Text("فعّل الوصول للإشعارات، ثم انتظر إشعار TikTok جديداً.", color = Muted, fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+            item {
                 Text("جهّز MESTOK", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 PermissionRow("الوصول للإشعارات", "لاستقبال إشعارات TikTok التي يسمح بها النظام",
                     notificationEnabled, onNotificationClick)
@@ -124,19 +173,11 @@ private fun MestokHome(
                     overlayEnabled, onOverlayClick)
             }
             item {
-                Text("معاينة المحادثات", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                ChatPreview("سارة", "بعثتلك فيديو جديد 👀", "الآن", "S", Purple)
-                Spacer(Modifier.height(9.dp))
-                ChatPreview("Ahmed", "وينك؟ نستنا فيك", "2 د", "A", Cyan)
-                Spacer(Modifier.height(9.dp))
-                ChatPreview("MESTOK", "هنا تظهر إشعاراتك المدعومة", "تجريبي", "M", Color(0xFFE879F9))
-            }
-            item {
                 Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF11131C))) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("ملاحظة مهمة", color = Cyan, fontWeight = FontWeight.Bold)
+                        Text("الخصوصية والحدود", color = Cyan, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(5.dp))
-                        Text("MESTOK يعرض الإشعارات التي يرسلها TikTok فقط. الرد المباشر متاح عندما يحتوي الإشعار على إجراء رد تدعمه TikTok.",
+                        Text("معاينة الإشعار تُحفظ محلياً على هاتفك. MESTOK لا يرسلها إلى خادم ولا يدخل إلى رسائلك الخاصة. الرد المباشر يحتاج إجراء رد يتيحه إشعار TikTok نفسه.",
                             color = Muted, fontSize = 12.sp, lineHeight = 18.sp)
                     }
                 }
@@ -164,22 +205,5 @@ private fun PermissionRow(title: String, subtitle: String, enabled: Boolean, act
                 Text(if (enabled) "إدارة" else "تفعيل", fontSize = 12.sp)
             }
         }
-    }
-}
-
-@Composable
-private fun ChatPreview(name: String, message: String, time: String, letter: String, tint: Color) {
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Panel).padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(44.dp).clip(CircleShape).background(tint.copy(alpha = 0.22f)),
-            contentAlignment = Alignment.Center) {
-            Text(letter, color = tint, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        }
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text(message, color = Muted, fontSize = 12.sp)
-        }
-        Text(time, color = Muted, fontSize = 10.sp)
     }
 }
