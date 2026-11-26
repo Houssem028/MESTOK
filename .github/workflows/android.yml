@@ -20,8 +20,10 @@ jobs:
           gradle-version: "8.9"
       - name: Build debug APK
         run: gradle assembleDebug
-      - name: Show debug signing certificate SHA-256
-        run: keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -keypass android | grep "SHA256:"
+      - name: Show APK signing certificate SHA-256
+        run: |
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort | tail -n 1)"
+          "$APKSIGNER" verify --print-certs app/build/outputs/apk/debug/app-debug.apk | grep "Signer #1 certificate SHA-256 digest"
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
