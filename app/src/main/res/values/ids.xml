@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="mestok_bubble_touch_x" type="id" />
+    <item name="mestok_bubble_touch_y" type="id" />
+    <item name="mestok_bubble_start_x" type="id" />
+    <item name="mestok_bubble_start_y" type="id" />
+    <item name="mestok_bubble_moved" type="id" />
+</resources>
