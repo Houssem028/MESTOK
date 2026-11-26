@@ -154,7 +154,7 @@ private fun WelcomeScreen(onContinue: () -> Unit) {
         contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Image(painter = painterResource(id = R.drawable.mestok_logo),
+            Image(painter = painterResource(id = R.mipmap.mestok_logo),
                 contentDescription = "MESTOK",
                 modifier = Modifier.fillMaxWidth().aspectRatio(1f).heightIn(max = 430.dp),
                 contentScale = ContentScale.Fit)
