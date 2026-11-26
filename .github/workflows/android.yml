@@ -36,7 +36,7 @@ jobs:
             KEYSTORE="$RUNNER_TEMP/mestok-upload-key.jks"
             SIGNED_APK="$RUNNER_TEMP/mestok-signed.apk"
             trap 'rm -f "$KEYSTORE" "$SIGNED_APK"' EXIT
-            printf '%s' "$MESTOK_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+            printf '%s' "$MESTOK_KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > "$KEYSTORE"
             "$APKSIGNER" sign --ks "$KEYSTORE" --ks-key-alias "$MESTOK_KEY_ALIAS" --ks-pass env:MESTOK_STORE_PASSWORD --key-pass env:MESTOK_KEY_PASSWORD --out "$SIGNED_APK" "$APK"
             mv "$SIGNED_APK" "$APK"
             echo "Stable MESTOK signing key applied."
