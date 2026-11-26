@@ -22,7 +22,7 @@ android {
 }
 val copyMestokBrandIcon by tasks.registering(Copy::class) {
     from(rootProject.file("MESTOK.png"))
-    into(layout.projectDirectory.dir("src/main/res/mipmap-nodpi"))
+    into(layout.projectDirectory.dir("src/main/res/drawable-nodpi"))
     rename { "mestok_logo.png" }
 }
 tasks.named("preBuild").configure { dependsOn(copyMestokBrandIcon) }
