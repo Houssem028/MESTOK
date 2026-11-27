@@ -44,10 +44,45 @@ private val Muted = Color(0xFF9CA3B8)
 
 class MainActivity : ComponentActivity() {
     private var refreshTick by mutableIntStateOf(0)
+    private var pendingTikTokResult by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleTikTokCallback(intent)
         render()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleTikTokCallback(intent)
+    }
+
+    private fun handleTikTokCallback(callbackIntent: Intent?) {
+        val callbackUri = callbackIntent?.data ?: return
+        if (callbackUri.scheme != "https" ||
+            callbackUri.host != "houssem028.github.io" ||
+            !callbackUri.path.orEmpty().startsWith("/mestok/auth/callback")) return
+
+        val authorizationCode = callbackUri.getQueryParameter("code")
+        val authorizationError = callbackUri.getQueryParameter("error")
+        pendingTikTokResult = when {
+            !authorizationError.isNullOrBlank() -> localized(
+                "لم يكتمل تفويض TikTok. يمكنك المحاولة لاحقاً.",
+                "L'autorisation TikTok n'a pas abouti. Réessaie plus tard.",
+                "TikTok authorization was not completed. You can try again later."
+            )
+            !authorizationCode.isNullOrBlank() -> localized(
+                "وصل رد التفويض من TikTok بنجاح، لكن تسجيل الدخول لن يكتمل حتى نربط خادم التحقق الآمن.",
+                "La réponse d'autorisation TikTok est arrivée. La connexion ne sera finalisée qu'après la mise en place du serveur sécurisé.",
+                "The TikTok authorization response arrived. Sign-in cannot be completed until the secure token-verification server is connected."
+            )
+            else -> localized(
+                "تم فتح رابط الرجوع الخاص بـ MESTOK، لكن لم يصل رمز تفويض صالح.",
+                "Le lien de retour MESTOK a été ouvert, mais aucun code d'autorisation valide n'a été reçu.",
+                "The MESTOK callback opened, but no valid authorization code was received."
+            )
+        }
     }
 
     override fun onResume() {
@@ -65,6 +100,13 @@ class MainActivity : ComponentActivity() {
             var page by remember { mutableStateOf("welcome") }
             var settingsReturnPage by remember { mutableStateOf("login") }
             var notice by remember { mutableStateOf<String?>(null) }
+
+            LaunchedEffect(pendingTikTokResult) {
+                pendingTikTokResult?.let {
+                    notice = it
+                    pendingTikTokResult = null
+                }
+            }
 
             MaterialTheme(colorScheme = darkColorScheme(
                 background = Ink, surface = Panel, primary = Purple,
