@@ -63,6 +63,7 @@ class MainActivity : ComponentActivity() {
             val latestMessage = prefs.getString("last_message", null).orEmpty()
             val hasLatest = latestTitle.isNotBlank() || latestMessage.isNotBlank()
             var page by remember { mutableStateOf("welcome") }
+            var settingsReturnPage by remember { mutableStateOf("login") }
             var notice by remember { mutableStateOf<String?>(null) }
 
             MaterialTheme(colorScheme = darkColorScheme(
@@ -72,7 +73,8 @@ class MainActivity : ComponentActivity() {
                 when (page) {
                     "welcome" -> WelcomeScreen(onContinue = { page = "login" })
                     "login" -> LoginScreen(
-                        onSettings = { page = "settings" },
+                        onSettings = { settingsReturnPage = "login"; page = "settings" },
+                        onGuest = { page = "home" },
                         onTikTok = { notice = localized(
                             "سيتم تفعيل تسجيل TikTok الرسمي بعد ربط Login Kit ومفاتيح المطوّر.",
                             "La connexion TikTok officielle sera activée après la configuration de Login Kit.",
@@ -82,7 +84,7 @@ class MainActivity : ComponentActivity() {
                     "settings" -> SettingsScreen(
                         notificationEnabled = isNotificationAccessEnabled(),
                         overlayEnabled = Settings.canDrawOverlays(this),
-                        onBack = { page = "home" },
+                        onBack = { page = settingsReturnPage },
                         onNotificationAccess = {
                             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                         },
@@ -118,7 +120,7 @@ class MainActivity : ComponentActivity() {
                         latestTitle = latestTitle,
                         latestMessage = latestMessage,
                         hasLatest = hasLatest,
-                        onSettings = { page = "settings" },
+                        onSettings = { settingsReturnPage = "home"; page = "settings" },
                         onOpenTikTok = { openTikTok() }
                     )
                 }
@@ -178,7 +180,7 @@ private fun WelcomeScreen(onContinue: () -> Unit) {
 }
 
 @Composable
-private fun LoginScreen(onTikTok: () -> Unit, onSettings: () -> Unit) {
+private fun LoginScreen(onTikTok: () -> Unit, onSettings: () -> Unit, onGuest: () -> Unit) {
     val uriHandler = LocalUriHandler.current
     var showPhoneLogin by remember { mutableStateOf(false) }
     var identifier by remember { mutableStateOf("") }
@@ -234,6 +236,9 @@ private fun LoginScreen(onTikTok: () -> Unit, onSettings: () -> Unit) {
         }
 
         Spacer(Modifier.weight(1f))
+        TextButton(onClick = onGuest) {
+            Text("Continuer sans compte", color = Color(0xFFFE2C55), fontWeight = FontWeight.Bold)
+        }
         TextButton(onClick = {
             infoTitle = "Créer un compte"
             infoBody = "La création de compte MESTOK sera disponible lorsque le système sécurisé d'inscription sera connecté."
