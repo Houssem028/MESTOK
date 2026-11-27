@@ -369,10 +369,23 @@ private fun HomeScreen(latestTitle: String, latestMessage: String, hasLatest: Bo
                 Card(colors = CardDefaults.cardColors(containerColor = Panel),
                     shape = RoundedCornerShape(16.dp)) {
                     Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                        Text("حساب TikTok المرتبط", color = Cyan, fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp)
-                        Text(tiktokDisplayName, fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp, modifier = Modifier.padding(top = 5.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (tiktokAvatarUrl.isNotBlank()) {
+                                coil.compose.AsyncImage(
+                                    model = tiktokAvatarUrl,
+                                    contentDescription = "صورة حساب TikTok",
+                                    modifier = Modifier.size(54.dp).clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Spacer(Modifier.width(12.dp))
+                            }
+                            Column {
+                                Text("حساب TikTok المرتبط", color = Cyan, fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp)
+                                Text(tiktokDisplayName, fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp, modifier = Modifier.padding(top = 5.dp))
+                            }
+                        }
                         Text("تم التحقق من الحساب عبر Login Kit التجريبي",
                             color = Muted, fontSize = 11.sp,
                             modifier = Modifier.padding(top = 4.dp))
