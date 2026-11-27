@@ -355,7 +355,7 @@ private fun HomeScreen(latestTitle: String, latestMessage: String, hasLatest: Bo
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column {
                     Text("MESTOK", fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
-                    Text("Stay in the moment.", color = Muted, fontSize = 12.sp)
+                    Text("ابقَ في اللحظة.", color = Muted, fontSize = 12.sp)
                 }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = onSettings, modifier = Modifier.size(48.dp)
@@ -465,7 +465,7 @@ private fun SettingsScreen(
             item { SettingItem("تسجيل الخروج", "الخروج من حساب TikTok المرتبط بهذا التطبيق", "↪", onLogout) }
         }
         item { Text("اللغة", color = Cyan, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp)) }
-        item { SettingItem("لغة التطبيق", "العربية — مستقلة عن لغة الهاتف", "ع", {}) }
+        item { SettingItem("لغة التطبيق", "العربية — مستقلة عن لغة الهاتف", "✓", { }) }
         item { Text("عام", color = Cyan, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp)) }
         item { SettingItem("الخصوصية", "سياسة الخصوصية الكاملة", "›", onPrivacy) }
         item { SettingItem("شروط الاستخدام", "شروط استخدام MESTOK", "›", onTerms) }
