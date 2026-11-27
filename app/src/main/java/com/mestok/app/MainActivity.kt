@@ -30,6 +30,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -124,6 +127,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             MaterialTheme(colorScheme = darkColorScheme(
                 background = Ink, surface = Panel, primary = Purple,
                 secondary = Cyan, onBackground = Color.White, onSurface = Color.White
@@ -204,6 +208,7 @@ class MainActivity : ComponentActivity() {
                         textContentColor = Muted
                     )
                 }
+            }
             }
         }
     }
