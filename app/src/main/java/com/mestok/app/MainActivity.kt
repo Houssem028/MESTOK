@@ -45,6 +45,7 @@ private val Muted = Color(0xFF9CA3B8)
 class MainActivity : ComponentActivity() {
     private var refreshTick by mutableIntStateOf(0)
     private var pendingTikTokResult by mutableStateOf<String?>(null)
+    private var pendingNavigation by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,6 +71,7 @@ class MainActivity : ComponentActivity() {
         val loginStatus = callbackUri.getQueryParameter("login")
         val authorizationError = callbackUri.getQueryParameter("error")
         if (loginStatus == "success") {
+            pendingNavigation = "home"
             val displayName = callbackUri.getQueryParameter("display_name").orEmpty()
             if (displayName.isNotBlank()) {
                 getSharedPreferences("mestok_local", MODE_PRIVATE).edit()
@@ -111,7 +113,11 @@ class MainActivity : ComponentActivity() {
             var settingsReturnPage by remember { mutableStateOf("login") }
             var notice by remember { mutableStateOf<String?>(null) }
 
-            LaunchedEffect(pendingTikTokResult) {
+            LaunchedEffect(pendingTikTokResult, pendingNavigation) {
+                pendingNavigation?.let {
+                    page = it
+                    pendingNavigation = null
+                }
                 pendingTikTokResult?.let {
                     notice = it
                     pendingTikTokResult = null
