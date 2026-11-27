@@ -60,9 +60,12 @@ class MainActivity : ComponentActivity() {
 
     private fun handleTikTokCallback(callbackIntent: Intent?) {
         val callbackUri = callbackIntent?.data ?: return
-        if (callbackUri.scheme != "https" ||
-            callbackUri.host != "houssem028.github.io" ||
-            !callbackUri.path.orEmpty().startsWith("/mestok/auth/callback")) return
+        val isVerifiedWebLink = callbackUri.scheme == "https" &&
+            callbackUri.host == "houssem028.github.io" &&
+            callbackUri.path.orEmpty().startsWith("/mestok/auth/callback")
+        val isAppSchemeLink = callbackUri.scheme == "mestok" &&
+            callbackUri.host == "auth" && callbackUri.path == "/callback"
+        if (!isVerifiedWebLink && !isAppSchemeLink) return
 
         val loginStatus = callbackUri.getQueryParameter("login")
         val authorizationError = callbackUri.getQueryParameter("error")
