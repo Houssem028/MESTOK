@@ -1,49 +1,66 @@
 package com.mestok.app
 
 import android.app.Notification
+import android.app.RemoteInput
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
+import android.os.Bundle
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.WindowManager
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import kotlin.math.abs
 
 class TikTokNotificationListener : NotificationListenerService() {
     private var bubbleView: TextView? = null
+    private var panelView: LinearLayout? = null
     private var windowManager: WindowManager? = null
     private var bubbleParams: WindowManager.LayoutParams? = null
+    private var latestTitle: String = "TikTok"
+    private var latestMessage: String = ""
+    private var latestReplyAction: Notification.Action? = null
 
     override fun onListenerConnected() {
         super.onListenerConnected()
-        // Pick up TikTok notifications that were already present when access was enabled.
         activeNotifications?.filter { isTikTokPackage(it.packageName) }
             ?.maxByOrNull { it.postTime }
-            ?.let { saveNotification(it) }
+            ?.let {
+                saveNotification(it)
+                latestReplyAction = findReplyAction(it.notification)
+            }
         if (Settings.canDrawOverlays(this) && hasSavedNotification()) showBubble()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         if (!isTikTokPackage(sbn.packageName)) return
         saveNotification(sbn)
+        latestReplyAction = findReplyAction(sbn.notification)
         if (Settings.canDrawOverlays(this)) showBubble()
+        panelView?.let { showPreviewPanel() }
     }
+
+    private fun findReplyAction(notification: Notification): Notification.Action? =
+        notification.actions?.firstOrNull { !it.remoteInputs.isNullOrEmpty() }
 
     private fun saveNotification(sbn: StatusBarNotification) {
         val extras = sbn.notification.extras
-        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
-        val message = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
+        latestTitle = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
+            .ifBlank { "TikTok" }
+        latestMessage = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
             ?: extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
 
-        // Notification previews remain on this device; nothing is uploaded.
         getSharedPreferences("mestok_local", Context.MODE_PRIVATE).edit()
-            .putString("last_title", title)
-            .putString("last_message", message)
+            .putString("last_title", latestTitle)
+            .putString("last_message", latestMessage)
             .putLong("last_time", sbn.postTime)
             .apply()
     }
@@ -71,7 +88,7 @@ class TikTokNotificationListener : NotificationListenerService() {
                 intArrayOf(0xFF42D9F5.toInt(), 0xFF8B5CF6.toInt(), 0xFFE879F9.toInt())
             ).apply { shape = GradientDrawable.OVAL }
             elevation = 12f
-            contentDescription = "اسحب فقاعة MESTOK أو اضغط لفتح التطبيق"
+            contentDescription = "فقاعة MESTOK العائمة"
         }
         val params = WindowManager.LayoutParams(
             dp(54), dp(54), WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -107,11 +124,7 @@ class TikTokNotificationListener : NotificationListenerService() {
                 }
                 MotionEvent.ACTION_UP -> {
                     val moved = view.getTag(R.id.mestok_bubble_moved) as? Boolean ?: false
-                    if (!moved) {
-                        val launch = packageManager.getLaunchIntentForPackage(packageName)
-                        launch?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                        if (launch != null) startActivity(launch)
-                    }
+                    if (!moved) showPreviewPanel()
                     true
                 }
                 else -> true
@@ -127,17 +140,127 @@ class TikTokNotificationListener : NotificationListenerService() {
         }
     }
 
-    private fun removeBubble() {
-        val view = bubbleView ?: return
+    private fun showPreviewPanel() {
+        val wm = (getSystemService(WINDOW_SERVICE) as WindowManager)
+        windowManager = wm
+        panelView?.let {
+            try { wm.removeView(it) } catch (_: Exception) { }
+            panelView = null
+        }
+
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            background = GradientDrawable().apply {
+                setColor(0xFF151722.toInt())
+                cornerRadius = dp(20).toFloat()
+                setStroke(dp(1), 0xFF42D9F5.toInt())
+            }
+        }
+        val heading = TextView(this).apply {
+            text = latestTitle.ifBlank { "TikTok" }
+            textSize = 17f
+            setTextColor(0xFFFFFFFF.toInt())
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+        val message = TextView(this).apply {
+            text = latestMessage.ifBlank { "وصل إشعار من TikTok، لكن لم يعرض النظام نص الرسالة." }
+            textSize = 14f
+            setTextColor(0xFFCDD2E2.toInt())
+            setPadding(0, dp(8), 0, dp(12))
+        }
+        val replyInput = EditText(this).apply {
+            hint = if (latestReplyAction != null) "اكتب رداً سريعاً…" else "الرد غير متاح في هذا الإشعار"
+            setTextColor(0xFFFFFFFF.toInt())
+            setHintTextColor(0xFF9CA3B8.toInt())
+            textSize = 14f
+            isSingleLine = true
+            isEnabled = latestReplyAction != null
+            setPadding(dp(10), dp(8), dp(10), dp(8))
+            background = GradientDrawable().apply {
+                setColor(0xFF252A3A.toInt())
+                cornerRadius = dp(12).toFloat()
+            }
+        }
+        val buttons = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.END
+        }
+        val closeButton = Button(this).apply {
+            text = "إغلاق"
+            setOnClickListener { removePanel() }
+        }
+        val sendButton = Button(this).apply {
+            text = "إرسال الرد"
+            isEnabled = latestReplyAction != null
+            setOnClickListener {
+                val reply = replyInput.text?.toString().orEmpty().trim()
+                if (reply.isNotBlank()) sendQuickReply(reply)
+            }
+        }
+        buttons.addView(closeButton)
+        buttons.addView(sendButton)
+        panel.addView(heading)
+        panel.addView(message)
+        panel.addView(replyInput)
+        panel.addView(buttons)
+
+        val params = WindowManager.LayoutParams(
+            dp(300), WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = (resources.displayMetrics.widthPixels - dp(316)).coerceAtLeast(dp(8))
+            y = (resources.displayMetrics.heightPixels / 2 - dp(130)).coerceAtLeast(dp(40))
+            softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+        }
+        try {
+            wm.addView(panel, params)
+            panelView = panel
+        } catch (_: Exception) {
+            Toast.makeText(this, "تعذر فتح نافذة MESTOK. تحقق من إذن الظهور فوق التطبيقات.", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun sendQuickReply(message: String) {
+        val action = latestReplyAction
+        val remoteInputs = action?.remoteInputs
+        if (action == null || remoteInputs.isNullOrEmpty()) {
+            Toast.makeText(this, "هذا الإشعار لا يدعم الرد السريع.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val fillInIntent = Intent()
+        val results = Bundle().apply {
+            putCharSequence(remoteInputs[0].resultKey, message)
+        }
+        RemoteInput.addResultsToIntent(remoteInputs, fillInIntent, results)
+        try {
+            action.actionIntent.send(this, 0, fillInIntent)
+            Toast.makeText(this, "تم إرسال طلب الرد إلى TikTok.", Toast.LENGTH_SHORT).show()
+            removePanel()
+        } catch (_: Exception) {
+            Toast.makeText(this, "لم يقبل TikTok إرسال الرد من هذا الإشعار.", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun removePanel() {
+        val view = panelView ?: return
         try { windowManager?.removeView(view) } catch (_: Exception) { }
-        bubbleView = null
-        bubbleParams = null
+        panelView = null
     }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
     override fun onDestroy() {
-        removeBubble()
+        removePanel()
+        val view = bubbleView
+        if (view != null) {
+            try { windowManager?.removeView(view) } catch (_: Exception) { }
+        }
+        bubbleView = null
+        bubbleParams = null
         super.onDestroy()
     }
 }
