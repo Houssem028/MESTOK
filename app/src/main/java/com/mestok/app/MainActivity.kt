@@ -240,10 +240,6 @@ private fun WelcomeScreen(onContinue: () -> Unit) {
 @Composable
 private fun LoginScreen(onTikTok: () -> Unit, onSettings: () -> Unit, onGuest: () -> Unit) {
     val uriHandler = LocalUriHandler.current
-    var showPhoneLogin by remember { mutableStateOf(false) }
-    var identifier by remember { mutableStateOf("") }
-    var infoTitle by remember { mutableStateOf<String?>(null) }
-    var infoBody by remember { mutableStateOf("") }
 
     Column(
         Modifier.fillMaxSize().background(Color.White).padding(horizontal = 24.dp),
@@ -259,51 +255,20 @@ private fun LoginScreen(onTikTok: () -> Unit, onSettings: () -> Unit, onGuest: (
                     tint = Color(0xFF252033))
             }
         }
-        Spacer(Modifier.height(24.dp))
-        Text("Connecte-toi à MESTOK", color = Color(0xFF111111),
-            fontSize = 28.sp, fontWeight = FontWeight.ExtraBold,
-            lineHeight = 34.sp)
-        Text("Choisis ta méthode de connexion", color = Color(0xFF777777),
-            fontSize = 14.sp, modifier = Modifier.padding(top = 10.dp, bottom = 28.dp))
-
-        LoginChoice("☎", "Téléphone / E-mail / Nom d'utilisateur") {
-            showPhoneLogin = true
-        }
-        Spacer(Modifier.height(12.dp))
-        LoginChoice("♪", "Continuer avec TikTok") { onTikTok() }
-        Spacer(Modifier.height(12.dp))
-        LoginChoice("f", "Continuer avec Facebook") {
-            infoTitle = "Facebook"
-            infoBody = "La connexion Facebook sera activée après la configuration officielle de Facebook Login."
-        }
-        Spacer(Modifier.height(12.dp))
-        LoginChoice("G", "Continuer avec Google") {
-            infoTitle = "Google"
-            infoBody = "La connexion Google sera activée après la configuration officielle de Google Sign-In."
-        }
-        Spacer(Modifier.height(24.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            HorizontalDivider(Modifier.weight(1f), color = Color(0xFFE2E2E2))
-            Text("  OU  ", color = Color(0xFF888888), fontSize = 12.sp)
-            HorizontalDivider(Modifier.weight(1f), color = Color(0xFFE2E2E2))
-        }
-        Spacer(Modifier.height(18.dp))
-        LoginChoice("▶", "Ouvrir l'application TikTok") {
-            infoTitle = "TikTok"
-            infoBody = "Tu peux ouvrir TikTok depuis ton téléphone. Pour connecter automatiquement ton compte à MESTOK, l'autorisation officielle TikTok Login Kit doit être configurée."
-        }
-
         Spacer(Modifier.weight(1f))
-        TextButton(onClick = onGuest) {
-            Text("Continuer sans compte", color = Color(0xFFFE2C55), fontWeight = FontWeight.Bold)
-        }
-        TextButton(onClick = {
-            infoTitle = "Créer un compte"
-            infoBody = "La création de compte MESTOK sera disponible lorsque le système sécurisé d'inscription sera connecté."
-        }) {
-            Text("Tu n'as pas de compte ?  Inscription",
-                color = Color(0xFFFE2C55), fontWeight = FontWeight.SemiBold)
-        }
+        Text("Connecte-toi avec TikTok", color = Color(0xFF111111),
+            fontSize = 27.sp, fontWeight = FontWeight.ExtraBold,
+            lineHeight = 34.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Text("Utilise ton compte TikTok pour accéder à MESTOK.",
+            color = Color(0xFF777777), fontSize = 14.sp,
+            modifier = Modifier.padding(top = 12.dp, bottom = 28.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        LoginChoice("♪", "Continuer avec TikTok") { onTikTok() }
+        Text("Tu seras redirigé vers TikTok pour vérifier ton compte et autoriser MESTOK.",
+            color = Color(0xFF777777), fontSize = 12.sp, lineHeight = 18.sp,
+            modifier = Modifier.padding(top = 14.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Spacer(Modifier.weight(1f))
         Text(
             "En continuant, tu acceptes nos Conditions d'utilisation et notre Politique de confidentialité.",
             color = Color(0xFF888888), fontSize = 11.sp, lineHeight = 17.sp,
@@ -321,43 +286,6 @@ private fun LoginScreen(onTikTok: () -> Unit, onSettings: () -> Unit, onGuest: (
                 uriHandler.openUri("https://houssem028.github.io/privacy.html")
             }) { Text("Confidentialité", color = Color(0xFF315D91), fontSize = 11.sp) }
         }
-    }
-
-    if (showPhoneLogin) {
-        AlertDialog(
-            onDismissRequest = { showPhoneLogin = false },
-            title = { Text("Connexion MESTOK", color = Color(0xFF111111)) },
-            text = {
-                Column {
-                    Text("Téléphone, e-mail ou nom d'utilisateur",
-                        color = Color(0xFF555555), fontSize = 13.sp)
-                    OutlinedTextField(
-                        value = identifier, onValueChange = { identifier = it },
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                        singleLine = true, placeholder = { Text("Saisis tes identifiants") }
-                    )
-                    Text("La connexion sécurisée sera activée après la configuration du service d'authentification.",
-                        color = Color(0xFF777777), fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 10.dp))
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showPhoneLogin = false }) { Text("Fermer") }
-            },
-            containerColor = Color.White
-        )
-    }
-
-    infoTitle?.let { title ->
-        AlertDialog(
-            onDismissRequest = { infoTitle = null },
-            title = { Text(title, color = Color(0xFF111111)) },
-            text = { Text(infoBody, color = Color(0xFF555555)) },
-            confirmButton = {
-                TextButton(onClick = { infoTitle = null }) { Text("OK") }
-            },
-            containerColor = Color.White
-        )
     }
 }
 
