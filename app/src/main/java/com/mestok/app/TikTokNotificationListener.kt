@@ -37,7 +37,9 @@ class TikTokNotificationListener : NotificationListenerService() {
                 saveNotification(it)
                 latestReplyAction = findReplyAction(it.notification)
             }
-        if (Settings.canDrawOverlays(this) && hasSavedNotification()) showBubble()
+        // Keep the MESTOK chat-head available as soon as notification access is connected.
+        // It can open an empty preview before the first TikTok notification arrives.
+        if (Settings.canDrawOverlays(this)) showBubble()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -63,12 +65,6 @@ class TikTokNotificationListener : NotificationListenerService() {
             .putString("last_message", latestMessage)
             .putLong("last_time", sbn.postTime)
             .apply()
-    }
-
-    private fun hasSavedNotification(): Boolean {
-        val prefs = getSharedPreferences("mestok_local", Context.MODE_PRIVATE)
-        return !prefs.getString("last_title", "").isNullOrBlank() ||
-            !prefs.getString("last_message", "").isNullOrBlank()
     }
 
     private fun isTikTokPackage(packageName: String) =
@@ -164,7 +160,7 @@ class TikTokNotificationListener : NotificationListenerService() {
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         }
         val message = TextView(this).apply {
-            text = latestMessage.ifBlank { "وصل إشعار من TikTok، لكن لم يعرض النظام نص الرسالة." }
+            text = latestMessage.ifBlank { "فقاعة MESTOK جاهزة. ستظهر هنا أحدث إشعارات TikTok عند وصولها." }
             textSize = 14f
             setTextColor(0xFFCDD2E2.toInt())
             setPadding(0, dp(8), 0, dp(12))
