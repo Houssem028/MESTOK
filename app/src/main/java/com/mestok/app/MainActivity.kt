@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -137,10 +138,7 @@ class MainActivity : ComponentActivity() {
                     "login" -> LoginScreen(
                         onSettings = { settingsReturnPage = "login"; page = "settings" },
                         onGuest = { page = "home" },
-                        onTikTok = {
-                            startActivity(Intent(Intent.ACTION_VIEW,
-                                Uri.parse("https://mestok-tiktok-auth.mmzhoussem.workers.dev/oauth")))
-                        }
+                        onTikTok = { openTikTokAuthorization() }
                     )
                     "settings" -> SettingsScreen(
                         notificationEnabled = isNotificationAccessEnabled(),
@@ -210,6 +208,22 @@ class MainActivity : ComponentActivity() {
                 }
             }
             }
+        }
+    }
+
+    private fun openTikTokAuthorization() {
+        val authorizationUri = Uri.parse("https://mestok-tiktok-auth.mmzhoussem.workers.dev/oauth")
+        try {
+            // Open the authorization page in the user's default browser using a secure Custom Tab.
+            // AndroidX Browser falls back to a normal ACTION_VIEW browser intent when Custom Tabs
+            // are not supported by an installed browser.
+            CustomTabsIntent.Builder()
+                .setShowTitle(true)
+                .build()
+                .launchUrl(this, authorizationUri)
+        } catch (_: Exception) {
+            // Last-resort fallback for devices with unusual browser/custom-tab configurations.
+            startActivity(Intent(Intent.ACTION_VIEW, authorizationUri))
         }
     }
 
