@@ -64,23 +64,30 @@ class MainActivity : ComponentActivity() {
             callbackUri.host != "houssem028.github.io" ||
             !callbackUri.path.orEmpty().startsWith("/mestok/auth/callback")) return
 
-        val authorizationCode = callbackUri.getQueryParameter("code")
+        val loginStatus = callbackUri.getQueryParameter("login")
         val authorizationError = callbackUri.getQueryParameter("error")
-        pendingTikTokResult = when {
-            !authorizationError.isNullOrBlank() -> localized(
+        if (loginStatus == "success") {
+            val displayName = callbackUri.getQueryParameter("display_name").orEmpty()
+            if (displayName.isNotBlank()) {
+                getSharedPreferences("mestok_local", MODE_PRIVATE).edit()
+                    .putString("tiktok_display_name", displayName)
+                    .putBoolean("tiktok_linked", true)
+                    .apply()
+            }
+            pendingTikTokResult = localized(
+                "تم ربط حساب TikTok بنجاح: $displayName",
+                "Compte TikTok connecté avec succès : $displayName",
+                "TikTok account connected successfully: $displayName"
+            )
+        } else {
+            pendingTikTokResult = if (!authorizationError.isNullOrBlank()) localized(
                 "لم يكتمل تفويض TikTok. يمكنك المحاولة لاحقاً.",
                 "L'autorisation TikTok n'a pas abouti. Réessaie plus tard.",
                 "TikTok authorization was not completed. You can try again later."
-            )
-            !authorizationCode.isNullOrBlank() -> localized(
-                "وصل رد التفويض من TikTok بنجاح، لكن تسجيل الدخول لن يكتمل حتى نربط خادم التحقق الآمن.",
-                "La réponse d'autorisation TikTok est arrivée. La connexion ne sera finalisée qu'après la mise en place du serveur sécurisé.",
-                "The TikTok authorization response arrived. Sign-in cannot be completed until the secure token-verification server is connected."
-            )
-            else -> localized(
-                "تم فتح رابط الرجوع الخاص بـ MESTOK، لكن لم يصل رمز تفويض صالح.",
-                "Le lien de retour MESTOK a été ouvert, mais aucun code d'autorisation valide n'a été reçu.",
-                "The MESTOK callback opened, but no valid authorization code was received."
+            ) else localized(
+                "لم تصل نتيجة تسجيل الدخول إلى MESTOK.",
+                "Le résultat de connexion n'est pas arrivé dans MESTOK.",
+                "The sign-in result did not reach MESTOK."
             )
         }
     }
@@ -117,11 +124,10 @@ class MainActivity : ComponentActivity() {
                     "login" -> LoginScreen(
                         onSettings = { settingsReturnPage = "login"; page = "settings" },
                         onGuest = { page = "home" },
-                        onTikTok = { notice = localized(
-                            "سيتم تفعيل تسجيل TikTok الرسمي بعد ربط Login Kit ومفاتيح المطوّر.",
-                            "La connexion TikTok officielle sera activée après la configuration de Login Kit.",
-                            "Official TikTok sign-in will be enabled after Login Kit and developer keys are configured."
-                        ) }
+                        onTikTok = {
+                            startActivity(Intent(Intent.ACTION_VIEW,
+                                Uri.parse("https://mestok-tiktok-auth.mmzhoussem.workers.dev/oauth")))
+                        }
                     )
                     "settings" -> SettingsScreen(
                         notificationEnabled = isNotificationAccessEnabled(),
@@ -162,6 +168,7 @@ class MainActivity : ComponentActivity() {
                         latestTitle = latestTitle,
                         latestMessage = latestMessage,
                         hasLatest = hasLatest,
+                        tiktokDisplayName = prefs.getString("tiktok_display_name", null).orEmpty(),
                         onSettings = { settingsReturnPage = "home"; page = "settings" },
                         onOpenTikTok = { openTikTok() }
                     )
@@ -386,6 +393,7 @@ private fun AuthField(label: String, value: String, onValue: (String) -> Unit,
 
 @Composable
 private fun HomeScreen(latestTitle: String, latestMessage: String, hasLatest: Boolean,
+                       tiktokDisplayName: String,
                        onSettings: () -> Unit, onOpenTikTok: () -> Unit) {
     LazyColumn(Modifier.fillMaxSize().background(Ink).padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -400,6 +408,22 @@ private fun HomeScreen(latestTitle: String, latestMessage: String, hasLatest: Bo
                 IconButton(onClick = onSettings, modifier = Modifier.size(48.dp)
                     .clip(CircleShape).background(Panel)) {
                     Icon(Icons.Default.SettingsIcon, "الإعدادات", tint = Cyan)
+                }
+            }
+        }
+        if (tiktokDisplayName.isNotBlank()) {
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = Panel),
+                    shape = RoundedCornerShape(16.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                        Text("حساب TikTok المرتبط", color = Cyan, fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp)
+                        Text(tiktokDisplayName, fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp, modifier = Modifier.padding(top = 5.dp))
+                        Text("تم التحقق من الحساب عبر Login Kit التجريبي",
+                            color = Muted, fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 4.dp))
+                    }
                 }
             }
         }
