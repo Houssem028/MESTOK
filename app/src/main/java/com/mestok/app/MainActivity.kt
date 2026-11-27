@@ -72,6 +72,7 @@ class MainActivity : ComponentActivity() {
                 when (page) {
                     "welcome" -> WelcomeScreen(onContinue = { page = "login" })
                     "login" -> LoginScreen(
+                        onSettings = { page = "settings" },
                         onTikTok = { notice = localized(
                             "سيتم تفعيل تسجيل TikTok الرسمي بعد ربط Login Kit ومفاتيح المطوّر.",
                             "La connexion TikTok officielle sera activée après la configuration de Login Kit.",
@@ -177,7 +178,7 @@ private fun WelcomeScreen(onContinue: () -> Unit) {
 }
 
 @Composable
-private fun LoginScreen(onTikTok: () -> Unit) {
+private fun LoginScreen(onTikTok: () -> Unit, onSettings: () -> Unit) {
     val uriHandler = LocalUriHandler.current
     var showPhoneLogin by remember { mutableStateOf(false) }
     var identifier by remember { mutableStateOf("") }
@@ -188,10 +189,17 @@ private fun LoginScreen(onTikTok: () -> Unit) {
         Modifier.fillMaxSize().background(Color.White).padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(Modifier.height(42.dp))
-        Text("MESTOK", color = Color(0xFF111111), fontSize = 25.sp,
-            fontWeight = FontWeight.Black, letterSpacing = 3.sp)
-        Spacer(Modifier.height(34.dp))
+        Spacer(Modifier.height(24.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("MESTOK", color = Color(0xFF111111), fontSize = 25.sp,
+                fontWeight = FontWeight.Black, letterSpacing = 3.sp)
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = onSettings) {
+                Icon(Icons.Default.SettingsIcon, contentDescription = "الإعدادات",
+                    tint = Color(0xFF252033))
+            }
+        }
+        Spacer(Modifier.height(24.dp))
         Text("Connecte-toi à MESTOK", color = Color(0xFF111111),
             fontSize = 28.sp, fontWeight = FontWeight.ExtraBold,
             lineHeight = 34.sp)
