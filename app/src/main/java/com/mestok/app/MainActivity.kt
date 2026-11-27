@@ -73,13 +73,12 @@ class MainActivity : ComponentActivity() {
         if (loginStatus == "success") {
             pendingNavigation = "home"
             val displayName = callbackUri.getQueryParameter("display_name").orEmpty()
-            if (displayName.isNotBlank()) {
-                getSharedPreferences("mestok_local", MODE_PRIVATE).edit()
-                    .putString("tiktok_display_name", displayName)
-                    .putBoolean("tiktok_linked", true)
-                    .putBoolean("mestok_logged_in", true)
-                    .apply()
-            }
+            getSharedPreferences("mestok_local", MODE_PRIVATE).edit()
+                .putString("tiktok_display_name", displayName)
+                .putString("tiktok_avatar_url", callbackUri.getQueryParameter("avatar_url").orEmpty())
+                .putBoolean("tiktok_linked", true)
+                .putBoolean("mestok_logged_in", true)
+                .apply()
             pendingTikTokResult = localized(
                 "تم ربط حساب TikTok بنجاح: $displayName",
                 "Compte TikTok connecté avec succès : $displayName",
@@ -154,6 +153,16 @@ class MainActivity : ComponentActivity() {
                             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                                 Uri.parse("package:$packageName")))
                         },
+                        isAccountLinked = prefs.getBoolean("tiktok_linked", false),
+                        onLogout = {
+                            prefs.edit().remove("tiktok_display_name")
+                                .remove("tiktok_avatar_url")
+                                .putBoolean("tiktok_linked", false)
+                                .putBoolean("mestok_logged_in", false).apply()
+                            page = "login"
+                            settingsReturnPage = "login"
+                            notice = "تم تسجيل الخروج من حسابك."
+                        },
                         onPrivacy = { page = "privacy" },
                         onTerms = { page = "terms" },
                         onSupport = { page = "support" },
@@ -179,6 +188,7 @@ class MainActivity : ComponentActivity() {
                         latestMessage = latestMessage,
                         hasLatest = hasLatest,
                         tiktokDisplayName = prefs.getString("tiktok_display_name", null).orEmpty(),
+                        tiktokAvatarUrl = prefs.getString("tiktok_avatar_url", null).orEmpty(),
                         onSettings = { settingsReturnPage = "home"; page = "settings" },
                         onOpenTikTok = { openTikTok() }
                     )
@@ -331,7 +341,7 @@ private fun AuthField(label: String, value: String, onValue: (String) -> Unit,
 
 @Composable
 private fun HomeScreen(latestTitle: String, latestMessage: String, hasLatest: Boolean,
-                       tiktokDisplayName: String,
+                       tiktokDisplayName: String, tiktokAvatarUrl: String,
                        onSettings: () -> Unit, onOpenTikTok: () -> Unit) {
     LazyColumn(Modifier.fillMaxSize().background(Ink).padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -401,6 +411,7 @@ private fun SettingsScreen(
     notificationEnabled: Boolean, overlayEnabled: Boolean,
     onBack: () -> Unit, onNotificationAccess: () -> Unit,
     onAppInfo: () -> Unit, onOverlay: () -> Unit,
+    isAccountLinked: Boolean, onLogout: () -> Unit,
     onPrivacy: () -> Unit, onTerms: () -> Unit, onSupport: () -> Unit, onAbout: () -> Unit
 ) {
     LazyColumn(Modifier.fillMaxSize().background(Ink).padding(20.dp),
@@ -431,6 +442,12 @@ private fun SettingsScreen(
                 }
             }
         }
+        item { Text("الحساب", color = Cyan, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp)) }
+        if (isAccountLinked) {
+            item { SettingItem("تسجيل الخروج", "الخروج من حساب TikTok المرتبط بهذا التطبيق", "↪", onLogout) }
+        }
+        item { Text("اللغة", color = Cyan, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp)) }
+        item { SettingItem("لغة التطبيق", "العربية — مستقلة عن لغة الهاتف", "ع", {}) }
         item { Text("عام", color = Cyan, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp)) }
         item { SettingItem("الخصوصية", "سياسة الخصوصية الكاملة", "›", onPrivacy) }
         item { SettingItem("شروط الاستخدام", "شروط استخدام MESTOK", "›", onTerms) }
