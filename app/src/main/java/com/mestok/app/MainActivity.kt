@@ -77,6 +77,7 @@ class MainActivity : ComponentActivity() {
                 getSharedPreferences("mestok_local", MODE_PRIVATE).edit()
                     .putString("tiktok_display_name", displayName)
                     .putBoolean("tiktok_linked", true)
+                    .putBoolean("mestok_logged_in", true)
                     .apply()
             }
             pendingTikTokResult = localized(
@@ -109,7 +110,7 @@ class MainActivity : ComponentActivity() {
             val latestTitle = prefs.getString("last_title", null).orEmpty()
             val latestMessage = prefs.getString("last_message", null).orEmpty()
             val hasLatest = latestTitle.isNotBlank() || latestMessage.isNotBlank()
-            var page by remember { mutableStateOf("welcome") }
+            var page by remember { mutableStateOf(if (prefs.getBoolean("tiktok_linked", false)) "home" else "welcome") }
             var settingsReturnPage by remember { mutableStateOf("login") }
             var notice by remember { mutableStateOf<String?>(null) }
 
@@ -256,15 +257,15 @@ private fun LoginScreen(onTikTok: () -> Unit, onSettings: () -> Unit, onGuest: (
             }
         }
         Spacer(Modifier.weight(1f))
-        Text("Connecte-toi avec TikTok", color = Color(0xFF111111),
+        Text("سجّل الدخول باستخدام TikTok", color = Color(0xFF111111),
             fontSize = 27.sp, fontWeight = FontWeight.ExtraBold,
             lineHeight = 34.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        Text("Utilise ton compte TikTok pour accéder à MESTOK.",
+        Text("استخدم حساب TikTok للوصول إلى MESTOK.",
             color = Color(0xFF777777), fontSize = 14.sp,
             modifier = Modifier.padding(top = 12.dp, bottom = 28.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        LoginChoice("♪", "Continuer avec TikTok") { onTikTok() }
-        Text("Tu seras redirigé vers TikTok pour vérifier ton compte et autoriser MESTOK.",
+        LoginChoice("♪", "المتابعة باستخدام TikTok") { onTikTok() }
+        Text("سيتم تحويلك إلى TikTok للتحقق من حسابك ومنح MESTOK الإذن.",
             color = Color(0xFF777777), fontSize = 12.sp, lineHeight = 18.sp,
             modifier = Modifier.padding(top = 14.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center)
