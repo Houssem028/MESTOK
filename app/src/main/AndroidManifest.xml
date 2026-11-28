@@ -33,7 +33,7 @@
         <service
             android:name=".TikTokNotificationListener"
             android:label="MESTOK notification access"
-            android:exported="false"
+            android:exported="true"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
