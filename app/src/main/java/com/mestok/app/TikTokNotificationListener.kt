@@ -207,6 +207,15 @@ class TikTokNotificationListener : NotificationListenerService() {
         if (!Settings.canDrawOverlays(this)) return
         val wm = getSystemService(WINDOW_SERVICE) as WindowManager
         windowManager = wm
+        // Keep the overlay tidy: rotate the oldest visible head out when a sixth
+        // conversation arrives. All conversations remain available in the panel list.
+        if (bubbles.size >= MAX_VISIBLE_BUBBLES) {
+            val oldestId = bubbles.keys.firstOrNull()
+            val oldest = oldestId?.let { bubbles.remove(it) }
+            if (oldest != null) {
+                try { wm.removeView(oldest.view) } catch (_: Exception) { }
+            }
+        }
         val bubble = MESTOKBubbleView(this).apply {
             contentDescription = "فقاعة MESTOK: ${conversations[conversationId]?.title ?: "محادثة"}"
             elevation = dp(8).toFloat()
