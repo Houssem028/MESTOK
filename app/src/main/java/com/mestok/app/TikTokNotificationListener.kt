@@ -5,6 +5,12 @@ import android.app.RemoteInput
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Shader
+import android.graphics.SweepGradient
+import android.view.View
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.provider.Settings
@@ -19,6 +25,80 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import kotlin.math.abs
+
+/**
+ * Branded chat-head inspired by the official MESTOK neon mark:
+ * white M, cyan/pink offset edges and a cyan-to-magenta neon ring.
+ */
+private class MESTOKBubbleView(context: Context) : View(context) {
+    private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 3.4f
+        shader = SweepGradient(
+            50f, 50f,
+            intArrayOf(0xFF00E9F5.toInt(), 0xFF168BFF.toInt(), 0xFFB43BFF.toInt(),
+                0xFFFF168B.toInt(), 0xFFFF168B.toInt(), 0xFF00E9F5.toInt()),
+            null
+        )
+    }
+    private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 3.4f
+        color = 0xFF00DDF5.toInt()
+        maskFilter = android.graphics.BlurMaskFilter(9f, android.graphics.BlurMaskFilter.Blur.NORMAL)
+    }
+    private val markPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = android.graphics.Color.WHITE
+    }
+    private val cyanPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = 0xFF00E8F2.toInt()
+    }
+    private val pinkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = 0xFFFF075F.toInt()
+    }
+    private val mark = Path().apply {
+        moveTo(13f, 76f)
+        lineTo(25f, 35f)
+        cubicTo(28f, 25f, 38f, 23f, 46f, 31f)
+        lineTo(53f, 43f)
+        lineTo(69f, 22f)
+        cubicTo(71f, 19f, 74f, 18f, 78f, 18f)
+        lineTo(84f, 18f)
+        lineTo(85f, 28f)
+        cubicTo(86f, 37f, 90f, 42f, 96f, 44f)
+        lineTo(92f, 73f)
+        cubicTo(90f, 83f, 82f, 87f, 72f, 88f)
+        lineTo(72f, 51f)
+        lineTo(55f, 69f)
+        lineTo(43f, 52f)
+        lineTo(36f, 77f)
+        cubicTo(33f, 87f, 22f, 87f, 13f, 82f)
+        close()
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        val side = minOf(width, height).toFloat()
+        val save = canvas.save()
+        canvas.scale(side / 100f, side / 100f)
+        setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+        canvas.drawCircle(50f, 50f, 44f, glowPaint)
+        canvas.drawCircle(50f, 50f, 44f, ringPaint)
+        canvas.save()
+        canvas.translate(-1.5f, -0.5f)
+        canvas.drawPath(mark, cyanPaint)
+        canvas.restore()
+        canvas.save()
+        canvas.translate(1.8f, 1.8f)
+        canvas.drawPath(mark, pinkPaint)
+        canvas.restore()
+        canvas.drawPath(mark, markPaint)
+        canvas.restoreToCount(save)
+    }
+}
 
 class TikTokNotificationListener : NotificationListenerService() {
     private var bubbleView: TextView? = null
@@ -74,25 +154,17 @@ class TikTokNotificationListener : NotificationListenerService() {
         if (bubbleView != null) return
         val wm = getSystemService(WINDOW_SERVICE) as WindowManager
         windowManager = wm
-        val bubble = TextView(this).apply {
-            text = "M"
-            textSize = 22f
-            setTextColor(0xFFFFFFFF.toInt())
-            gravity = Gravity.CENTER
-            background = GradientDrawable(
-                GradientDrawable.Orientation.TL_BR,
-                intArrayOf(0xFF42D9F5.toInt(), 0xFF8B5CF6.toInt(), 0xFFE879F9.toInt())
-            ).apply { shape = GradientDrawable.OVAL }
-            elevation = 12f
+        val bubble = MESTOKBubbleView(this).apply {
             contentDescription = "فقاعة MESTOK العائمة"
+            elevation = dp(8).toFloat()
         }
         val params = WindowManager.LayoutParams(
-            dp(54), dp(54), WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            dp(66), dp(66), WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = resources.displayMetrics.widthPixels - dp(68)
+            x = resources.displayMetrics.widthPixels - dp(76)
             y = resources.displayMetrics.heightPixels / 2
         }
         bubble.setOnTouchListener { view, event ->
@@ -113,7 +185,7 @@ class TikTokNotificationListener : NotificationListenerService() {
                     val dx = event.rawX - downX
                     val dy = event.rawY - downY
                     if (abs(dx) > dp(5) || abs(dy) > dp(5)) view.setTag(R.id.mestok_bubble_moved, true)
-                    params.x = (startX + dx.toInt()).coerceIn(0, resources.displayMetrics.widthPixels - dp(54))
+                    params.x = (startX + dx.toInt()).coerceIn(0, resources.displayMetrics.widthPixels - dp(66))
                     params.y = (startY + dy.toInt()).coerceIn(0, resources.displayMetrics.heightPixels - dp(100))
                     try { wm.updateViewLayout(view, params) } catch (_: Exception) { }
                     true
