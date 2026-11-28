@@ -111,23 +111,25 @@ class TikTokNotificationListener : NotificationListenerService() {
 
     override fun onListenerConnected() {
         super.onListenerConnected()
+        // Restore the bubble only when a TikTok notification is already present.
+        // Do not show an idle bubble merely because notification access was enabled.
         activeNotifications?.filter { isTikTokPackage(it.packageName) }
             ?.maxByOrNull { it.postTime }
             ?.let {
                 saveNotification(it)
                 latestReplyAction = findReplyAction(it.notification)
+                if (Settings.canDrawOverlays(this)) showBubble()
             }
-        // Keep the MESTOK chat-head available as soon as notification access is connected.
-        // It can open an empty preview before the first TikTok notification arrives.
-        if (Settings.canDrawOverlays(this)) showBubble()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         if (!isTikTokPackage(sbn.packageName)) return
         saveNotification(sbn)
         latestReplyAction = findReplyAction(sbn.notification)
+        // Show the floating bubble only when a new TikTok notification arrives.
         if (Settings.canDrawOverlays(this)) showBubble()
-        panelView?.let { showPreviewPanel() }
+        // Refresh the preview if the user already has the MESTOK panel open.
+        if (panelView != null) showPreviewPanel()
     }
 
     private fun findReplyAction(notification: Notification): Notification.Action? =
