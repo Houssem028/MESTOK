@@ -101,7 +101,7 @@ private class MESTOKBubbleView(context: Context) : View(context) {
 }
 
 class TikTokNotificationListener : NotificationListenerService() {
-    private var bubbleView: TextView? = null
+    private var bubbleView: View? = null
     private var panelView: LinearLayout? = null
     private var windowManager: WindowManager? = null
     private var bubbleParams: WindowManager.LayoutParams? = null
